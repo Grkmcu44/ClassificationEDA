@@ -7,3 +7,108 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName("ClassificationEda") \
         .config("spark.sql.debug.maxToStringFields", 1000) \
         .getOrCreate()
+
+#to use col function
+from pyspark.sql.functions import col, when
+# to draw corellation matrix
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.stat import Correlation
+import matplotlib.pyplot as plt
+# Check Version
+spark
+
+
+# Load Datasets
+target = spark.read.csv("/user/hduser/data/target.csv", header=True, inferSchema=True)
+target.show(5)
+
+#Check Schema
+
+target.printSchema()
+
+# Missing Value
+
+columns_to_check = ["id", "flag"]
+
+# calculate missing value 
+for column in columns_to_check:
+    missing_values_count = target.filter(col(column).isNull()).count()
+    print(f"Column '{column}': {missing_values_count} missing value")
+
+# Load DAtaset
+
+df0 = spark.read.parquet("/user/hduser/data/train_data_0.pq", header=True, inferSchema=True)
+#df1 = spark.read.parquet("/user/hduser/data/train_data_1.pq", header=True, inferSchema=True)
+#df2 = spark.read.parquet("/user/hduser/data/train_data_2.pq", header=True, inferSchema=True)
+#df3 = spark.read.parquet("/user/hduser/data/train_data_3.pq", header=True, inferSchema=True)
+#df4 = spark.read.parquet("/user/hduser/data/train_data_4.pq", header=True, inferSchema=True)
+#df5 = spark.read.parquet("/user/hduser/data/train_data_5.pq", header=True, inferSchema=True)
+#df6 = spark.read.parquet("/user/hduser/data/train_data_6.pq", header=True, inferSchema=True)
+#df7 = spark.read.parquet("/user/hduser/data/train_data_7.pq", header=True, inferSchema=True)
+#df8 = spark.read.parquet("/user/hduser/data/train_data_8.pq", header=True, inferSchema=True)
+#df9 = spark.read.parquet("/user/hduser/data/train_data_9.pq", header=True, inferSchema=True)
+#df10 =spark.read.parquet("/user/hduser/data/train_data_10.pq", header=True, inferSchema=True)
+#df11= spark.read.parquet("/user/hduser/data/train_data_11.pq", header=True, inferSchema=True)
+
+#check data
+
+# Save dataframes to pyspark catalog
+df0.createOrReplaceTempView("df0")
+#df1.createOrReplaceTempView("df1")
+#df2.createOrReplaceTempView("df2")
+#df3.createOrReplaceTempView("df3")
+#df4.createOrReplaceTempView("df4")
+#df5.createOrReplaceTempView("df5")
+#df6.createOrReplaceTempView("df6")
+#df7.createOrReplaceTempView("df7")
+#df8.createOrReplaceTempView("df8")
+#df9.createOrReplaceTempView("df9")
+#df10.createOrReplaceTempView("df10")
+#df11.createOrReplaceTempView("df11")
+df0.head(1)
+
+# Combined all dataframes
+#combined_df = None
+#for i in range(12)
+#for i in range(12):
+ #   df_name = f"df{i}"
+  #  if combined_df is None:
+   #     combined_df = spark.table(df_name)
+   # else:
+   #     combined_df = combined_df.union(spark.table(df_name))
+
+# show
+#combined_df.show(1)
+
+#filter data
+combined_df = df0.limit(500000)
+
+data_type = type(combined_df)
+
+#check schema
+combined_df.printSchema()
+
+
+from pyspark.sql.functions import col
+
+# convert all columsn to integer
+for col_name in combined_df.columns:
+    combined_df = combined_df.withColumn(col_name, col(col_name).cast("integer"))
+
+# recent Schema
+combined_df.printSchema()
+
+#check columns name
+
+combined_df.columns
+
+# select columns
+#"pre_loans_total_overdue",
+selected_columns = ["id","pre_loans_credit_limit", "pre_loans_next_pay_summ", "pre_loans_outstanding","pre_loans_credit_cost_rate"
+                   ,"pre_util","pre_over2limit","pre_maxover2limit","enc_loans_credit_type"]
+selected_df0 = combined_df.select(*selected_columns)
+
+# Show results
+selected_df0.show(1)
+
+#Check missing value
