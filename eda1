@@ -112,3 +112,35 @@ selected_df0 = combined_df.select(*selected_columns)
 selected_df0.show(1)
 
 #Check missing value
+
+from pyspark.sql.functions import isnan, when, count, col
+selected_df0.select([count(when(isnan(c) | col(c).isNull(), c)).alias(c) for c in selected_df0.columns]).show()
+
+#no missing value
+
+# Summary of the dataset
+
+#,"pre_loans_total_overdue"
+selected_df0.describe(["pre_loans_credit_limit", "pre_loans_next_pay_summ", "pre_loans_outstanding"]).show()
+
+selected_df0.describe(["pre_loans_credit_cost_rate"
+                   ,"pre_util","pre_over2limit","pre_maxover2limit","enc_loans_credit_type"]).show()
+
+rows = selected_df0.count()
+print(f"DataFrame Rows count : {rows}")
+
+#merge all data 
+full_data = selected_df0.join(target, "id", "inner")
+
+# Birleştirilmiş veriyi gösterme
+full_data.show(1)
+
+full_data.printSchema()
+
+#data type check
+data_type = type(full_data)
+print(data_type)
+
+#data counts and summary
+full_data.describe(["id","pre_loans_credit_limit","pre_loans_next_pay_summ","flag"]).show()
+
