@@ -260,5 +260,70 @@ full_data.show(5,truncate=False)
 
 full_data.printSchema()
 
+#Normalization (Min Max)
+#I choosed Min-Max Because my data is in the range of 0-1 and I do not want to keep the distribution of the data
+
+from pyspark.sql import SparkSession
+from pyspark.ml.feature import VectorAssembler, MinMaxScaler
+from pyspark.ml.classification import LogisticRegression
+
+
+# drop first and last column
+feature_cols = full_data.columns[1:-1]  # İlk sütun ve son sütun dışında kalan özellik sütunlarını seçin
+assembler = VectorAssembler(inputCols=feature_cols, outputCol="features5")
+full_data = assembler.transform(full_data)
+
+# apply min max normalization
+scaler = MinMaxScaler(inputCol="features5", outputCol="scaled_features")
+scaler_model = scaler.fit(full_data)
+data = scaler_model.transform(full_data)
+
+train_data, test_data = data.randomSplit([0.7, 0.3], seed=123)
+
+train_data.show(1)
+
+test_data.show(1)
+
+# Logistic regression
+lr = LogisticRegression(featuresCol="scaled_features", labelCol="flag")
+model = lr.fit(train_data)
+
+
+# Modeli değerlendirme
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+predictions = model.transform(test_data)
+evaluator = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction", labelCol="flag")
+accuracy = evaluator.evaluate(predictions)
+
+print("Model Accuracy:", accuracy)
+
+#0.5667 accuracy
+
+from pyspark.ml.classification import MultilayerPerceptronClassifier
+# Yapay sinir ağı modeli için katmanları tanımlayın
+# Örnek olarak [giriş katmanı, gizli katmanlar, çıkış katmanı] şeklinde bir liste verebilirsiniz
+layers = [len(train_data.select("scaled_features").first()[0]), 10, 5, 2]  # Örnekte gizli katmanlar 2 tane
+# varsayilan ogrenme yontemi 0.03 (stepSize)
+#varsayilan solver "l-bfgs",  # Geri yayılım algoritması olarak L-BFGS(Limited-memory Broyden-Fletcher-Goldfarb-Shanno)
+# MultilayerPerceptronClassifier modelini tanımlayın
+mlp = MultilayerPerceptronClassifier(
+    layers=layers, 
+    labelCol="flag", 
+    featuresCol="scaled_features",
+    maxIter=100, 
+    blockSize=128, 
+    seed=1234)
+
+model = mlp.fit(train_data)
+
+predictions = model.transform(test_data)
+
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+evaluator = MulticlassClassificationEvaluator(labelCol="flag", predictionCol="prediction", metricName="accuracy")
+accuracy = evaluator.evaluate(predictions)
+print("Accuracy:", accuracy)
+
+
 
 
