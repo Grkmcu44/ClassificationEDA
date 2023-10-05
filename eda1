@@ -144,3 +144,121 @@ print(data_type)
 #data counts and summary
 full_data.describe(["id","pre_loans_credit_limit","pre_loans_next_pay_summ","flag"]).show()
 
+from pyspark.sql.functions import col, count
+full_data.select([count(when(isnan(c) | col(c).isNull(), c)).alias(c) for c in full_data.columns]).show()
+
+# Her sütundaki eksik değer sayısını hesaplayın ve sütun adını koruyun
+missing_values = full_data.select([count(when(col(c).isNull() | isnan(c), c)).alias(c) for c in full_data.columns])
+
+# Eksik değer sayılarını görüntüleyin
+missing_values.show()
+
+#Memory space error
+
+#data counts and summary
+full_data.describe(["id","pre_loans_credit_limit","pre_loans_next_pay_summ","flag"]).show()
+
+#Duplicate
+duplicate_rows = full_data.groupBy(full_data.columns).count().filter(col("count") > 1)
+
+# Show results
+duplicate_rows.show()
+
+# drop dublicate
+full_data = full_data.dropDuplicates()
+
+# show dataframe
+full_data.show(1)
+
+#check result
+duplicate_rows2 = full_data.groupBy(full_data.columns).count().filter(col("count") > 1)
+
+# show result
+duplicate_rows2.show()
+
+#corellation
+# take columns
+feature_columns = full_data.columns
+vector_assembler = VectorAssembler(inputCols=feature_columns, outputCol="features")
+assembled_df = vector_assembler.transform(full_data)
+
+# calculate matrix
+correlation_matrix = Correlation.corr(assembled_df, "features").collect()[0][0]
+
+# visulasation
+plt.figure(figsize=(8, 8))
+plt.imshow(correlation_matrix.toArray(), cmap='coolwarm', interpolation='nearest')
+plt.colorbar()
+
+# put on the values on the map 
+num_cols = len(feature_columns)
+for i in range(num_cols):
+    for j in range(num_cols):
+        plt.text(i, j, f'{correlation_matrix[i, j]:.2f}', ha='center', va='center', color='black')
+
+plt.title("Corellation matrix")
+plt.xticks(range(num_cols), feature_columns, rotation=45)
+plt.yticks(range(num_cols), feature_columns)
+plt.show()
+
+from pyspark.sql.functions import avg
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("pre_loans_credit_limit").alias("Average_Value"))
+
+# Show result
+result.show()
+
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("pre_loans_next_pay_summ").alias("Average_Value"))
+
+# Show result
+result.show()
+
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("pre_loans_outstanding").alias("Average_Value"))
+
+# Show result
+result.show()
+
+# group by and avg value
+#result = full_data.groupBy("flag").agg(avg("pre_loans_total_overdue").alias("Average_Value"))
+
+# Show result
+#result.show()
+
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("pre_loans_credit_cost_rate").alias("Average_Value"))
+
+# Show result
+result.show()
+
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("pre_util").alias("Average_Value"))
+
+# Show result
+result.show()
+
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("pre_over2limit").alias("Average_Value"))
+
+# Show result
+result.show()
+
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("pre_maxover2limit").alias("Average_Value"))
+
+# Show result
+result.show()
+
+# group by and avg value
+result = full_data.groupBy("flag").agg(avg("enc_loans_credit_type").alias("Average_Value"))
+
+# Show result
+result.show()
+
+full_data.show(5,truncate=False)
+
+full_data.printSchema()
+
+
+
